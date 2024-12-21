@@ -1,12 +1,17 @@
-import React from 'react';
-import { ClipboardList, Search, Download } from 'lucide-react';
+import React from "react";
+import { ClipboardList, Search, Download } from "lucide-react";
+import Graph from "../../pages/Graph";
 
 const LabResultsPage = () => {
   return (
     <div className="p-8 space-y-6">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Lab Results</h1>
-        <p className="text-gray-600 dark:text-gray-400">View and manage your laboratory test results</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          Lab Results
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          View and manage your laboratory test results
+        </p>
       </header>
 
       <div className="flex space-x-4 mb-8">
@@ -48,7 +53,9 @@ const LabResultsPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <ClipboardList className="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3" />
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{result.name}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {result.name}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -58,10 +65,13 @@ const LabResultsPage = () => {
                     {result.result}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${result.status === 'Normal'
-                        ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-400'
-                        : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-400'
-                      }`}>
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        result.status === "Normal"
+                          ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-400"
+                          : "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-400"
+                      }`}
+                    >
                       {result.status}
                     </span>
                   </td>
@@ -83,24 +93,24 @@ const LabResultsPage = () => {
 const labResults = [
   {
     id: 1,
-    name: 'Complete Blood Count',
-    date: 'Mar 15, 2024',
-    result: 'View Details',
-    status: 'Normal',
+    name: "Complete Blood Count",
+    date: "Mar 15, 2024",
+    result: "View Details",
+    status: "Normal",
   },
   {
     id: 2,
-    name: 'Lipid Panel',
-    date: 'Mar 10, 2024',
-    result: 'View Details',
-    status: 'Abnormal',
+    name: "Lipid Panel",
+    date: "Mar 10, 2024",
+    result: "View Details",
+    status: "Abnormal",
   },
   {
     id: 3,
-    name: 'Thyroid Function',
-    date: 'Mar 5, 2024',
-    result: 'View Details',
-    status: 'Normal',
+    name: "Thyroid Function",
+    date: "Mar 5, 2024",
+    result: "View Details",
+    status: "Normal",
   },
 ];
 

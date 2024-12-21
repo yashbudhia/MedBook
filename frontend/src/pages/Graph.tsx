@@ -106,20 +106,23 @@ const Graph: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-4">
+    <div>
       <h1 className="text-center text-2xl font-bold mb-4">
-        Metrics Change Over Time
+        Health Metrics Trends
       </h1>
+      <br />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Fasting Glucose */}
         <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-lg font-bold mb-2">Fasting Glucose</h2>
+          <h2 className="text-lg font-bold mb-2 text-black">Fasting Glucose</h2>
           <Line data={fastingGlucoseData} options={fastingGlucoseOptions} />
         </div>
 
         {/* Post-Prandial Glucose */}
         <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-lg font-bold mb-2">Post-Prandial Glucose</h2>
+          <h2 className="text-lg font-bold mb-2 text-black">
+            Post-Prandial Glucose
+          </h2>
           <Line
             data={postPrandialGlucoseData}
             options={postPrandialGlucoseOptions}
@@ -128,7 +131,7 @@ const Graph: React.FC = () => {
 
         {/* HbA1c */}
         <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-lg font-bold mb-2">HbA1c</h2>
+          <h2 className="text-lg font-bold mb-2 text-black">HbA1c</h2>
           <Line data={hba1cData} options={hba1cOptions} />
         </div>
       </div>
