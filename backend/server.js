@@ -5,12 +5,17 @@ const { fromPath } = require("pdf2pic"); // For PDF-to-image conversion
 const tesseract = require("tesseract.js"); // For OCR of images
 const pdfParse = require("pdf-parse"); // For parsing PDF content
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+const cors = require("cors");
+
 const { MongoClient } = require("mongodb");
 
 require("dotenv").config();
 
 const app = express();
 const port = 3000;
+
+app.use(cors());
 
 // Configure Multer for file uploads
 const upload = multer({
@@ -177,6 +182,41 @@ app.post("/upload", upload.single("medicalReport"), async (req, res) => {
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
+  }
+});
+
+// Route to fetch metrics
+app.get("/api/metrics", async (req, res) => {
+  try {
+    const collection = db.collection("medicalReports");
+
+    // Fetch documents that contain the required fields
+    const reports = await collection
+      .find({
+        "report.testDate": { $exists: true },
+        "report.results.fastingGlucose.value": { $exists: true },
+        "report.results.postPrandialGlucose.value": { $exists: true },
+        "report.results.hba1c.value": { $exists: true },
+      })
+      .toArray();
+
+    // Extract the relevant data
+    const timestamps = reports.map((report) => report.report.testDate);
+    const fastingGlucose = reports.map(
+      (report) => report.report.results.fastingGlucose.value
+    );
+    const postPrandialGlucose = reports.map(
+      (report) => report.report.results.postPrandialGlucose.value
+    );
+    const hba1c = reports.map((report) => report.report.results.hba1c.value);
+
+    res.status(200).json({
+      timestamps,
+      metrics: { fastingGlucose, postPrandialGlucose, hba1c },
+    });
+  } catch (error) {
+    console.error("Error fetching metrics:", error.message);
+    res.status(500).send("Failed to fetch metrics.");
   }
 });
 
