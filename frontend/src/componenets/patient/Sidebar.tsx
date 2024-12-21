@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 const menuItems = [
-  { icon: Activity, label: 'Dashboard', path: '/dashboard' },
+  { icon: Activity, label: 'Dashboard', path: '/patientDashboard' },
   { icon: FileText, label: 'Medical Records', path: '/records' },
   { icon: Users, label: 'Family History', path: '/family' },
   { icon: Calendar, label: 'Appointments', path: '/appointments' },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { 
+import {
   Activity,
   Calendar,
   FileText,
@@ -7,7 +7,7 @@ import {
   Clock
 } from 'lucide-react';
 
-const Dashboard = () => {
+const PatientDashboard = () => {
   return (
     <div className="p-8 space-y-6">
       <header className="mb-8">
@@ -119,4 +119,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default PatientDashboard;
