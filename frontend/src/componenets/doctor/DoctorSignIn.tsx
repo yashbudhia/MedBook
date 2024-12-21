@@ -1,34 +1,36 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { UserRound, Lock } from 'lucide-react';
-import axios from 'axios';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { UserRound, Lock } from "lucide-react";
+import axios from "axios";
 
 const DoctorSignIn = () => {
-  const [formData, setFormData] = useState({ userId: '', password: '' });
-  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({ userId: "", password: "" });
+  const [error, setError] = useState("");
   const navigate = useNavigate(); // React Router's hook for navigation
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/doctor/signin', formData);
+      const response = await axios.post(
+        "http://localhost:5000/api/doctor/signin",
+        formData
+      );
       // Save JWT token
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem("token", response.data.token);
       // Also store userType
-      localStorage.setItem('userType', 'doctor');
+      localStorage.setItem("userType", "doctor");
 
-      alert('Login successful!');
+      alert("Login successful!");
 
       // 1) Navigate to homepage
-      navigate('/');
+      navigate("/");
 
       // 2) Then force one-time reload
       setTimeout(() => {
         window.location.reload();
       }, 100);
-
     } catch (err) {
-      setError('Login failed');
+      setError("Login failed");
     }
   };
 
@@ -58,7 +60,9 @@ const DoctorSignIn = () => {
           className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
           placeholder="Password"
           value={formData.password}
-          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, password: e.target.value })
+          }
         />
       </div>
       <button

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FileText, Upload, Search, X } from "lucide-react";
+import { FileText, Upload, Search, X, Download } from "lucide-react";
 
 const RecordsPage = () => {
   const [file, setFile] = useState(null);
@@ -85,6 +85,32 @@ const RecordsPage = () => {
     }
   };
 
+  // Handle file download
+  const handleDownload = async (id, fileName) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/download/${id}`, {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to download file");
+      }
+
+      // Convert the response to a Blob and create a download link
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName || "downloaded-file";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Error downloading file:", err.message);
+      alert("Error downloading file: " + err.message);
+    }
+  };
+
   return (
     <div className="p-8 space-y-6 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <header className="mb-8">
@@ -127,7 +153,7 @@ const RecordsPage = () => {
             >
               <div className="flex items-center space-x-4">
                 <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                <div>
+                <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {record.fileName || "Unnamed Record"}
                   </h3>
@@ -135,6 +161,12 @@ const RecordsPage = () => {
                     {new Date(record.uploadDate).toLocaleDateString()}
                   </p>
                 </div>
+                <button
+                  onClick={() => handleDownload(record._id, record.fileName)}
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-500"
+                >
+                  <Download className="w-5 h-5" />
+                </button>
               </div>
             </div>
           ))
