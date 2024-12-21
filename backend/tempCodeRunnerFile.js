@@ -1,7 +1,6 @@
 const express = require("express");
 const multer = require("multer");
 const fs = require("fs");
-const { fromPath } = require("pdf2pic"); // For PDF-to-image conversion
 const tesseract = require("tesseract.js"); // For OCR of images
 const pdfParse = require("pdf-parse"); // For parsing PDF content
 const { GoogleGenerativeAI } = require("@google/generative-ai");
@@ -33,11 +32,11 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // MongoDB connection URI and database setup
-const mongoUri = process.env.MONGO_URI;
-const dbName = "medBook";
+const mongoUri = process.env.MONGO_URI; // Example: "mongodb://localhost:27017"
+const dbName = "medBook"; // Your database name
 let db;
 
-MongoClient.connect(mongoUri)
+MongoClient.connect(mongoUri, { useUnifiedTopology: true })
   .then((client) => {
     console.log("Connected to MongoDB");
     db = client.db(dbName);
@@ -54,43 +53,17 @@ const extractJSON = (text) => {
       throw new TypeError("Input is not a string");
     }
 
+    // Log the raw text for debugging purposes
+    console.log("Raw Structured Text:", text);
+
+    // Remove code block markers and trim whitespace
     const cleanText = text.replace(/```json|```/g, "").trim();
+
+    // Parse and return the JSON
     return JSON.parse(cleanText);
   } catch (error) {
     console.error("Failed to parse JSON:", error.message);
     throw new Error("Failed to parse structured JSON from Gemini API response");
-  }
-};
-
-// Function to extract text from PDFs using OCR
-const extractTextFromPdfUsingOCR = async (filePath) => {
-  try {
-    console.log("Converting PDF pages to images...");
-    const options = {
-      density: 300, // Image resolution
-      saveFilename: "temp", // Temporary file prefix
-      savePath: "./uploads/", // Save images in the uploads directory
-      format: "png",
-      width: 1024,
-      height: 768,
-    };
-
-    const pdf2pic = fromPath(filePath, options);
-    const totalPages = await pdf2pic.info();
-    console.log(`PDF has ${totalPages} page(s).`);
-
-    let extractedText = "";
-    for (let i = 1; i <= totalPages; i++) {
-      console.log(`Processing page ${i}/${totalPages}...`);
-      const result = await pdf2pic.convert(i); // Convert each page to an image
-      const { data } = await tesseract.recognize(result.path, "eng");
-      extractedText += data.text + "\n";
-    }
-
-    return extractedText.trim();
-  } catch (error) {
-    console.error("Error during OCR conversion:", error.message);
-    throw new Error("Failed to process PDF with OCR.");
   }
 };
 
@@ -108,19 +81,9 @@ app.post("/upload", upload.single("medicalReport"), async (req, res) => {
 
     // Extract text from the uploaded file
     if (file.mimetype === "application/pdf") {
-      try {
-        const pdfData = fs.readFileSync(file.path);
-        const pdfContent = await pdfParse(pdfData);
-        extractedText = pdfContent.text;
-
-        if (!extractedText.trim()) {
-          console.warn("PDF contains no text. Attempting OCR...");
-          extractedText = await extractTextFromPdfUsingOCR(file.path);
-        }
-      } catch (error) {
-        console.error("PDF parsing failed. Attempting OCR...");
-        extractedText = await extractTextFromPdfUsingOCR(file.path);
-      }
+      const pdfData = fs.readFileSync(file.path);
+      const pdfContent = await pdfParse(pdfData);
+      extractedText = pdfContent.text;
     } else if (file.mimetype.startsWith("image/")) {
       const { data } = await tesseract.recognize(file.path, "eng");
       extractedText = data.text;
@@ -136,6 +99,7 @@ app.post("/upload", upload.single("medicalReport"), async (req, res) => {
 
     console.log("Gemini API Full Response:", result);
 
+    // Extract and clean the structured text from the Gemini API response
     let structuredData = null;
     if (
       result.response &&
@@ -160,11 +124,13 @@ app.post("/upload", upload.single("medicalReport"), async (req, res) => {
 
     console.log("Structured Data:", structuredData);
 
+    // Insert the structured data into MongoDB
     const collection = db.collection("medicalReports");
     const insertResult = await collection.insertOne(structuredData);
 
     console.log("Data inserted into MongoDB:", insertResult.insertedId);
 
+    // Respond with the cleaned and structured data
     res.status(200).json({
       message: "File processed, structured, and stored successfully.",
       data: structuredData,
