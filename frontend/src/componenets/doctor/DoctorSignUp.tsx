@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { UserRound, Mail, ScrollText, Lock } from 'lucide-react';
 
-const SignUp = () => {
+const DoctorSignUp = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -98,4 +99,4 @@ const SignUp = () => {
   );
 };
 
-export default SignUp;
+export default DoctorSignUp;

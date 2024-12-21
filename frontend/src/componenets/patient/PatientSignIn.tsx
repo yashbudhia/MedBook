@@ -3,7 +3,7 @@ import { UserRound, Lock } from 'lucide-react';
 import FormInput from './FormInput';
 import SubmitButton from './SubmitButton';
 
-const SignIn = () => {
+const PatientSignIn = () => {
   const [formData, setFormData] = useState({
     userId: '',
     password: '',
@@ -35,4 +35,4 @@ const SignIn = () => {
   );
 };
 
-export default SignIn;
+export default PatientSignIn;

@@ -3,7 +3,7 @@ import { UserRound, Mail, Lock } from 'lucide-react';
 import FormInput from './FormInput';
 import SubmitButton from './SubmitButton';
 
-const SignUp = () => {
+const PatientSignUp = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -51,4 +51,4 @@ const SignUp = () => {
   );
 };
 
-export default SignUp;
+export default PatientSignUp;

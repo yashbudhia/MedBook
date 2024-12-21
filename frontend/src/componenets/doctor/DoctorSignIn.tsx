@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { UserRound, Lock } from 'lucide-react';
 
-const SignIn = () => {
+const DoctorSignIn = () => {
   const [formData, setFormData] = useState({
     userId: '',
     password: '',
@@ -53,4 +53,4 @@ const SignIn = () => {
   );
 };
 
-export default SignIn;
+export default DoctorSignIn;
