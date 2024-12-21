@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ClipboardList, Shield, Users, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import NavigationBar from "../componenets/Navbar";
 
 const HomePage: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -36,6 +37,7 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <NavigationBar />
       {/* Hero Section */}
       <main>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">

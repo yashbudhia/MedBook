@@ -2,14 +2,13 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import NavigationBar from "./componenets/Navbar.tsx";
 import { BrowserRouter } from "react-router-dom";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       {/* Now NavigationBar has Router context and can use useNavigate */}
-      <NavigationBar />
+
 
       {/* Keep your background styling around App, if desired */}
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
