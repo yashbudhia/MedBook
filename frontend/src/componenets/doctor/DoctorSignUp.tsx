@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UserRound, Mail, ScrollText, Lock } from 'lucide-react';
+import axios from 'axios';
 
-const SignUp = () => {
+const DoctorSignUp = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -9,15 +11,42 @@ const SignUp = () => {
     userId: '',
     password: '',
   });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const navigate = useNavigate(); // React Router's hook for navigation
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle sign up logic here
-    console.log('Sign up:', formData);
+    try {
+      // POST to signup endpoint
+      const response = await axios.post('http://localhost:5000/api/doctor/signup', formData);
+
+      // If your backend returns a token on signup:
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('userType', 'doctor');
+
+      setSuccess('Signup successful! Redirecting to homepage...');
+      setFormData({ name: '', email: '', licenseNumber: '', userId: '', password: '' });
+
+      // Wait 2 seconds, then navigate and reload
+      setTimeout(() => {
+        navigate('/');
+
+        // Then force one-time reload after a short delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }, 2000);
+
+    } catch (err) {
+      setError('Signup failed');
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {error && <p className="text-red-500">{error}</p>}
+      {success && <p className="text-green-500">{success}</p>}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <UserRound className="h-5 w-5 text-gray-400" />
@@ -31,7 +60,6 @@ const SignUp = () => {
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
       </div>
-
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Mail className="h-5 w-5 text-gray-400" />
@@ -45,7 +73,6 @@ const SignUp = () => {
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
         />
       </div>
-
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <ScrollText className="h-5 w-5 text-gray-400" />
@@ -59,7 +86,6 @@ const SignUp = () => {
           onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
         />
       </div>
-
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <UserRound className="h-5 w-5 text-gray-400" />
@@ -73,7 +99,6 @@ const SignUp = () => {
           onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
         />
       </div>
-
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Lock className="h-5 w-5 text-gray-400" />
@@ -87,7 +112,6 @@ const SignUp = () => {
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
         />
       </div>
-
       <button
         type="submit"
         className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -98,4 +122,4 @@ const SignUp = () => {
   );
 };
 
-export default SignUp;
+export default DoctorSignUp;

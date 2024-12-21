@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stethoscope } from 'lucide-react';
-import AuthTabs from '../componenets/doctor/AuthTabs';
+import DoctorAuthTabs from '../componenets/doctor/DoctorAuthTabs';
 
 const DoctorLogin: React.FC = () => {
     return (
@@ -14,7 +14,7 @@ const DoctorLogin: React.FC = () => {
                     <p className="text-gray-500 text-sm mt-1">Sign in or create your account</p>
                 </div>
 
-                <AuthTabs />
+                <DoctorAuthTabs />
             </div>
         </div>
     );
