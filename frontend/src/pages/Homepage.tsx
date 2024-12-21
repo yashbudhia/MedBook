@@ -1,8 +1,39 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ClipboardList, Shield, Users, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const HomePage: React.FC = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userType, setUserType] = useState<"doctor" | "patient" | null>(null);
+
+  // Function to check login status
+  const checkLoginStatus = () => {
+    const token = localStorage.getItem("token");
+    const userTypeFromStorage = localStorage.getItem("userType");
+    if (token && userTypeFromStorage) {
+      setIsLoggedIn(true);
+      setUserType(userTypeFromStorage as "doctor" | "patient");
+    } else {
+      setIsLoggedIn(false);
+      setUserType(null);
+    }
+  };
+
+  // UseEffect to check login status on mount and after updates
+  useEffect(() => {
+    checkLoginStatus(); // Initial check
+
+    // Listen for storage changes
+    const handleStorageChange = () => {
+      checkLoginStatus();
+    };
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Hero Section */}
@@ -20,22 +51,32 @@ const HomePage: React.FC = () => {
                 place. Designed for both patients and healthcare providers.
               </p>
 
-              <div className="mt-8 sm:max-w-lg sm:mx-auto lg:mx-0">
-                <div className="space-y-4">
-                  <Link to="/patientlogin">
-                    <button className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10">
-                      Patient Login
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </button>
-                  </Link>
-                  <Link to="/doctorlogin">
-                    <button className="w-full flex items-center justify-center px-8 py-3 border border-blue-600 text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 md:py-4 md:text-lg md:px-10">
-                      Doctor Login
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </button>
-                  </Link>
+              {!isLoggedIn && (
+                <div className="mt-8 sm:max-w-lg sm:mx-auto lg:mx-0">
+                  <div className="space-y-4">
+                    <Link to="/patientlogin">
+                      <button className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10">
+                        Patient Login
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </button>
+                    </Link>
+                    <Link to="/doctorlogin">
+                      <button className="w-full flex items-center justify-center px-8 py-3 border border-blue-600 text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 md:py-4 md:text-lg md:px-10">
+                        Doctor Login
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </button>
+                    </Link>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {isLoggedIn && (
+                <div className="mt-8 sm:max-w-lg sm:mx-auto lg:mx-0">
+                  <div className="text-lg text-blue-600 font-medium">
+                    Welcome back, {userType === "doctor" ? "Doctor" : "Patient"}!
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
