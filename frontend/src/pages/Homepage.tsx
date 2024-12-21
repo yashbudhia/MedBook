@@ -61,6 +61,7 @@ const HomePage: React.FC = () => {
                         Patient Login
                         <ArrowRight className="ml-2 h-5 w-5" />
                       </button>
+                      <br></br>
                     </Link>
                     <Link to="/doctorlogin">
                       <button className="w-full flex items-center justify-center px-8 py-3 border border-blue-600 text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 md:py-4 md:text-lg md:px-10">

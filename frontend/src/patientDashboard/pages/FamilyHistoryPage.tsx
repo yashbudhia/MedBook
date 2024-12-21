@@ -1,68 +1,99 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { Users, Plus, Trash } from "lucide-react";
 
 const FamilyHistoryPage = () => {
-  const [familyMembers, setFamilyMembers] = useState(() => {
-    // Load initial state from localStorage, or use hardcoded data
-    const savedMembers = localStorage.getItem("familyMembers");
-    return savedMembers
-      ? JSON.parse(savedMembers)
-      : [
-          {
-            id: 1,
-            name: "Sarah Johnson",
-            relation: "Mother",
-            conditions: ["Type 2 Diabetes", "Hypertension"],
-          },
-          {
-            id: 2,
-            name: "Michael Johnson",
-            relation: "Father",
-            conditions: ["Heart Disease", "High Cholesterol"],
-          },
-          {
-            id: 3,
-            name: "Emily Johnson",
-            relation: "Sister",
-            conditions: ["Asthma"],
-          },
-        ];
-  });
+  const [familyMembers, setFamilyMembers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [newMember, setNewMember] = useState({
     name: "",
     relation: "",
     conditions: "",
   });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Save family members to localStorage whenever they change
+  // Retrieve token from localStorage
+  const token = localStorage.getItem("token");
+
+  // Fetch family history on component mount
+  const fetchFamilyHistory = async () => {
+    if (!token) {
+      setError("Unauthorized. Please log in.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await axios.get("http://localhost:5000/api/patient/family-history", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setFamilyMembers(response.data.familyHistory);
+      setError("");
+    } catch (err) {
+      console.error("Fetch Family History Error:", err);
+      setError(
+        err.response?.data?.error || "Failed to fetch family history."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem("familyMembers", JSON.stringify(familyMembers));
-  }, [familyMembers]);
+    fetchFamilyHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleAddMember = () => {
+  // Add a new family member
+  const handleAddMember = async () => {
     if (!newMember.name || !newMember.relation || !newMember.conditions) {
       alert("Please fill out all fields");
       return;
     }
 
-    const conditionsArray = newMember.conditions
-      .split(",")
-      .map((c) => c.trim());
-    const member = {
-      id: Date.now(),
-      ...newMember,
-      conditions: conditionsArray,
-    };
-
-    setFamilyMembers([...familyMembers, member]);
-    setShowForm(false);
-    setNewMember({ name: "", relation: "", conditions: "" });
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/patient/family-history",
+        newMember,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setFamilyMembers(response.data.familyHistory);
+      setShowForm(false);
+      setNewMember({ name: "", relation: "", conditions: "" });
+      setError("");
+    } catch (err) {
+      console.error("Add Family Member Error:", err);
+      setError(
+        err.response?.data?.error || "Failed to add family member."
+      );
+    }
   };
 
-  const handleDeleteMember = (id) => {
-    const updatedMembers = familyMembers.filter((member) => member.id !== id);
-    setFamilyMembers(updatedMembers);
+  // Delete a family member
+  const handleDeleteMember = async (famId: string) => {
+    try {
+      const response = await axios.delete(
+        `http://localhost:5000/api/patient/family-history/${famId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setFamilyMembers(response.data.familyHistory);
+      setError("");
+    } catch (err) {
+      console.error("Delete Family Member Error:", err);
+      setError(
+        err.response?.data?.error || "Failed to delete family member."
+      );
+    }
   };
 
   return (
@@ -76,6 +107,14 @@ const FamilyHistoryPage = () => {
         </p>
       </header>
 
+      {/* Display error messages */}
+      {error && (
+        <div className="bg-red-100 text-red-700 p-4 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {/* Add Family Member Button */}
       <button
         onClick={() => setShowForm(!showForm)}
         className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mb-8"
@@ -84,6 +123,7 @@ const FamilyHistoryPage = () => {
         <span>Add Family Member</span>
       </button>
 
+      {/* Add Family Member Form */}
       {showForm && (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 mb-8">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
@@ -127,49 +167,59 @@ const FamilyHistoryPage = () => {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {familyMembers.map((member) => (
-          <div
-            key={member.id}
-            className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative"
-          >
-            <button
-              onClick={() => handleDeleteMember(member.id)}
-              className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full hover:bg-red-700"
+      {/* Family Members List */}
+      {loading ? (
+        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {familyMembers.map((member: any) => (
+            <div
+              key={member._id} // Use _id from MongoDB
+              className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative"
             >
-              <Trash className="w-4 h-4" />
-            </button>
-            <div className="flex items-center space-x-4 mb-4">
-              <div className="bg-blue-50 dark:bg-blue-900 p-3 rounded-full">
-                <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              {/* Delete Button */}
+              <button
+                onClick={() => handleDeleteMember(member._id)}
+                className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full hover:bg-red-700"
+              >
+                <Trash className="w-4 h-4" />
+              </button>
+
+              {/* Family Member Details */}
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="bg-blue-50 dark:bg-blue-900 p-3 rounded-full">
+                  <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                    {member.name}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {member.relation}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                  {member.name}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {member.relation}
-                </p>
+
+              {/* Medical Conditions */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Medical Conditions:
+                </h4>
+                <ul className="space-y-1">
+                  {member.conditions.map((condition: string, index: number) => (
+                    <li
+                      key={index}
+                      className="text-sm text-gray-600 dark:text-gray-400"
+                    >
+                      • {condition}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Medical Conditions:
-              </h4>
-              <ul className="space-y-1">
-                {member.conditions.map((condition, index) => (
-                  <li
-                    key={index}
-                    className="text-sm text-gray-600 dark:text-gray-400"
-                  >
-                    • {condition}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
