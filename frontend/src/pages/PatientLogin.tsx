@@ -1,8 +1,8 @@
 // src/pages/PatientLogin.tsx
 
 import React from 'react';
-import Header from '../componenets/Header';
-import AuthTabs from '../componenets/AuthTabs';
+import Header from '../componenets/patient/Header';
+import AuthTabs from '../componenets/patient/AuthTabs';
 
 const PatientLogin: React.FC = () => {
     return (

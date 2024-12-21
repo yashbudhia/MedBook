@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stethoscope } from 'lucide-react';
-import AuthTabs from '../componenets/AuthTabs';
+import AuthTabs from '../componenets/doctor/AuthTabs';
 
 const DoctorLogin: React.FC = () => {
     return (
