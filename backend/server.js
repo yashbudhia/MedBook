@@ -1,0 +1,130 @@
+const express = require("express");
+const multer = require("multer");
+const fs = require("fs");
+const tesseract = require("tesseract.js"); // For OCR of images
+const pdfParse = require("pdf-parse"); // For parsing PDF content
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+require("dotenv").config();
+
+const app = express();
+const port = 3000;
+
+// Configure Multer for file uploads
+const upload = multer({
+  dest: "uploads/",
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true); // Accept file
+    } else {
+      cb(
+        new Error("Unsupported file type. Only PDFs and images are allowed."),
+        false
+      );
+    }
+  },
+});
+
+// Initialize Google Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// Helper function to extract JSON from text
+const extractJSON = (text) => {
+  try {
+    // Ensure the input is a string
+    if (typeof text !== "string") {
+      throw new TypeError("Input is not a string");
+    }
+
+    // Remove code block markers and trim whitespace
+    const cleanText = text.replace(/```json|```/g, "").trim();
+
+    // Parse the cleaned text into JSON
+    return JSON.parse(cleanText);
+  } catch (error) {
+    console.error("Failed to parse JSON:", error);
+    return null; // Return null if parsing fails
+  }
+};
+
+// Route to handle file uploads
+app.post("/upload", upload.single("medicalReport"), async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).send("No file uploaded.");
+    }
+
+    console.log(`File uploaded: ${file.originalname}`);
+    let extractedText = "";
+
+    // Extract text from the uploaded file
+    if (file.mimetype === "application/pdf") {
+      const pdfData = fs.readFileSync(file.path);
+      const pdfContent = await pdfParse(pdfData);
+      extractedText = pdfContent.text;
+    } else if (file.mimetype.startsWith("image/")) {
+      const { data } = await tesseract.recognize(file.path, "eng");
+      extractedText = data.text;
+    } else {
+      return res.status(400).send("Unsupported file type.");
+    }
+
+    console.log("Extracted Text:", extractedText);
+
+    // Send the extracted text to Google Gemini
+    const prompt = `Organize the following medical report into structured JSON format:\n\n${extractedText}`;
+    const result = await model.generateContent(prompt);
+
+    console.log("Gemini API Full Response:", result);
+
+    // Extract the organized text from the Gemini API response
+    let structuredData = null;
+    if (
+      result.response &&
+      result.response.candidates &&
+      result.response.candidates.length > 0
+    ) {
+      // Extract the text content from the nested structure
+      const structuredText =
+        result.response.candidates[0].content.parts?.[0]?.text ||
+        result.response.candidates[0].content;
+
+      // Extract JSON from the structured text
+      structuredData = extractJSON(structuredText);
+
+      if (!structuredData) {
+        // Fallback: Return raw response if JSON extraction fails
+        structuredData = {
+          rawResponse: result.response.candidates[0].content,
+        };
+      }
+    } else {
+      throw new Error("No valid response from Gemini API");
+    }
+
+    console.log("Structured Data:", structuredData);
+
+    // Respond with the structured data
+    res.status(200).json({
+      message: "File processed and structured successfully.",
+      data: structuredData,
+    });
+  } catch (error) {
+    console.error("Error processing file:", error);
+    res.status(500).send("Internal Server Error.");
+  } finally {
+    // Clean up uploaded file
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+  }
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+});
