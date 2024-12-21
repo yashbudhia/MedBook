@@ -1,8 +1,8 @@
 import React from 'react';
-import Dashboard from '../../componenets/patient/Dashboard';
+import PatientDashboard from '../../componenets/patient/PatientDashboard';
 
 const DashboardPage = () => {
-  return <Dashboard />;
+  return <PatientDashboard />;
 };
 
 export default DashboardPage;

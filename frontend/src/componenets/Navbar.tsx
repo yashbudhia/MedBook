@@ -69,7 +69,7 @@ const NavigationBar = () => {
             {/* Show Dashboard link only if user is a patient */}
             {userType === "patient" && (
               <Link
-                to="/dashboard"
+                to="/patientDashboard"
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
                 Dashboard

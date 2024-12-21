@@ -33,9 +33,6 @@ const FamilyHistoryPage = () => {
       setError("");
     } catch (err) {
       console.error("Fetch Family History Error:", err);
-      setError(
-        err.response?.data?.error || "Failed to fetch family history."
-      );
     } finally {
       setLoading(false);
     }
@@ -69,9 +66,6 @@ const FamilyHistoryPage = () => {
       setError("");
     } catch (err) {
       console.error("Add Family Member Error:", err);
-      setError(
-        err.response?.data?.error || "Failed to add family member."
-      );
     }
   };
 
@@ -90,9 +84,6 @@ const FamilyHistoryPage = () => {
       setError("");
     } catch (err) {
       console.error("Delete Family Member Error:", err);
-      setError(
-        err.response?.data?.error || "Failed to delete family member."
-      );
     }
   };
 
