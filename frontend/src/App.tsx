@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from '../src/pages/Homepage';
 import PatientLogin from './pages/PatientLogin';
-import Test from './pages/Test';
+import DoctorLogin from './pages/DoctorLogin';
 
 function App() {
   return (
@@ -9,7 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/patientlogin" element={<PatientLogin />} />
-        <Route path="/test" element={<Test />} />
+        <Route path="/doctorlogin" element={<DoctorLogin />} />
       </Routes>
     </Router>
   );
