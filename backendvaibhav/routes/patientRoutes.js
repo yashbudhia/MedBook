@@ -144,20 +144,29 @@ router.delete('/medications/:medId', auth, async (req, res) => {
         const { medId } = req.params;
         const patient = req.patient;
 
-        const medication = patient.medications.id(medId);
-        if (!medication) {
+        // 1) Track the array length before
+        const beforeCount = patient.medications.length;
+
+        // 2) Pull subdocument(s) matching _id = medId
+        patient.medications.pull({ _id: medId });
+
+        // 3) Check if anything was removed
+        if (patient.medications.length === beforeCount) {
             return res.status(404).json({ error: 'Medication not found' });
         }
 
-        medication.remove();
+        // 4) Save updates
         await patient.save();
-
-        return res.status(200).json({ message: 'Medication deleted successfully', medications: patient.medications });
+        return res.status(200).json({
+            message: 'Medication deleted successfully',
+            medications: patient.medications,
+        });
     } catch (err) {
         console.error('Delete Medication Error:', err);
         res.status(500).json({ error: 'Failed to delete medication' });
     }
 });
+
 
 /* -------------------------------------------------------
    FAMILY HISTORY ROUTES
@@ -219,19 +228,23 @@ router.delete('/family-history/:famId', auth, async (req, res) => {
         const { famId } = req.params;
         const patient = req.patient;
 
-        const familyMember = patient.familyHistory.id(famId);
-        if (!familyMember) {
+        // Option A: pull
+        const originalLength = patient.familyHistory.length;
+        patient.familyHistory.pull({ _id: famId });
+        if (patient.familyHistory.length === originalLength) {
             return res.status(404).json({ error: 'Family member not found' });
         }
 
-        familyMember.remove();
         await patient.save();
-
-        return res.status(200).json({ message: 'Family member deleted successfully', familyHistory: patient.familyHistory });
+        return res.status(200).json({
+            message: 'Family member deleted successfully',
+            familyHistory: patient.familyHistory,
+        });
     } catch (err) {
         console.error('Delete Family Member Error:', err);
         res.status(500).json({ error: 'Failed to delete family member' });
     }
 });
+
 
 module.exports = router;

@@ -3,32 +3,7 @@ import axios from "axios";
 import { Users, Plus, Trash } from "lucide-react";
 
 const FamilyHistoryPage = () => {
-  const [familyMembers, setFamilyMembers] = useState(() => {
-    // Load initial state from localStorage, or use hardcoded data
-    const savedMembers = localStorage.getItem("familyMembers");
-    return savedMembers
-      ? JSON.parse(savedMembers)
-      : [
-        {
-          id: 1,
-          name: "Sarah Johnson",
-          relation: "Mother",
-          conditions: ["Type 2 Diabetes", "Hypertension"],
-        },
-        {
-          id: 2,
-          name: "Michael Johnson",
-          relation: "Father",
-          conditions: ["Heart Disease", "High Cholesterol"],
-        },
-        {
-          id: 3,
-          name: "Emily Johnson",
-          relation: "Sister",
-          conditions: ["Asthma"],
-        },
-      ];
-  });
+  const [familyMembers, setFamilyMembers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [newMember, setNewMember] = useState({
     name: "",
@@ -58,6 +33,9 @@ const FamilyHistoryPage = () => {
       setError("");
     } catch (err) {
       console.error("Fetch Family History Error:", err);
+      setError(
+        err.response?.data?.error || "Failed to fetch family history."
+      );
     } finally {
       setLoading(false);
     }
@@ -91,6 +69,9 @@ const FamilyHistoryPage = () => {
       setError("");
     } catch (err) {
       console.error("Add Family Member Error:", err);
+      setError(
+        err.response?.data?.error || "Failed to add family member."
+      );
     }
   };
 
@@ -109,6 +90,9 @@ const FamilyHistoryPage = () => {
       setError("");
     } catch (err) {
       console.error("Delete Family Member Error:", err);
+      setError(
+        err.response?.data?.error || "Failed to delete family member."
+      );
     }
   };
 

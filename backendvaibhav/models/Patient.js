@@ -1,10 +1,11 @@
+// models/Patient.js
 const mongoose = require('mongoose');
 
 // Define the schema for a family member
 const FamilyMemberSchema = new mongoose.Schema({
     name: { type: String, required: true },
     relation: { type: String, required: true },
-    conditions: [{ type: String }], // Array of medical conditions
+    conditions: [{ type: String }] // Array of medical conditions
 }, { timestamps: true });
 
 // Define the schema for a patient
@@ -14,7 +15,7 @@ const PatientSchema = new mongoose.Schema({
     userId: { type: String, required: true, unique: true },
     password: { type: String, required: true },
 
-    // Medications Array (as previously defined)
+    // Medications (assuming you already have something similar)
     medications: [
         {
             name: { type: String, required: true },
@@ -24,7 +25,7 @@ const PatientSchema = new mongoose.Schema({
         },
     ],
 
-    // Family History Array
+    // Family History as an array of FamilyMemberSchema
     familyHistory: [FamilyMemberSchema],
 }, { timestamps: true });
 
