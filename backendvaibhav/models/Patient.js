@@ -1,10 +1,31 @@
 const mongoose = require('mongoose');
 
-const patientSchema = new mongoose.Schema({
+// Define the schema for a family member
+const FamilyMemberSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    relation: { type: String, required: true },
+    conditions: [{ type: String }], // Array of medical conditions
+}, { timestamps: true });
+
+// Define the schema for a patient
+const PatientSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     userId: { type: String, required: true, unique: true },
-    password: { type: String, required: true }, // Use bcrypt for hashing
-});
+    password: { type: String, required: true },
 
-module.exports = mongoose.model('Patient', patientSchema);
+    // Medications Array (as previously defined)
+    medications: [
+        {
+            name: { type: String, required: true },
+            dosage: { type: String, required: true },
+            schedule: { type: String, required: true },
+            status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
+        },
+    ],
+
+    // Family History Array
+    familyHistory: [FamilyMemberSchema],
+}, { timestamps: true });
+
+module.exports = mongoose.model('Patient', PatientSchema);

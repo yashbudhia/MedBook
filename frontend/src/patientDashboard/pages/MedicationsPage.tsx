@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { Pill, Plus, Clock, Trash } from "lucide-react";
 
 const MedicationsPage = () => {
-  const [medications, setMedications] = useState(() => {
-    // Load initial state from localStorage
-    const savedMeds = localStorage.getItem("medications");
-    return savedMeds ? JSON.parse(savedMeds) : [];
-  });
+  const [medications, setMedications] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [newMedication, setNewMedication] = useState({
     name: "",
@@ -15,30 +12,75 @@ const MedicationsPage = () => {
     status: "Active",
   });
 
-  // Save medications to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("medications", JSON.stringify(medications));
-  }, [medications]);
+  // Retrieve token from localStorage
+  const token = localStorage.getItem("token");
 
-  const handleAddMedication = () => {
-    if (
-      !newMedication.name ||
-      !newMedication.dosage ||
-      !newMedication.schedule
-    ) {
+  // 1) Fetch medications from the server on mount
+  const fetchMedications = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/patient/medications", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // response.data.medications is the array from the server
+      setMedications(response.data.medications);
+    } catch (error) {
+      console.error("Failed to fetch medications:", error);
+      // handle error (redirect to login if 401, etc.)
+    }
+  };
+
+  useEffect(() => {
+    fetchMedications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 2) Add a new medication
+  const handleAddMedication = async () => {
+    if (!newMedication.name || !newMedication.dosage || !newMedication.schedule) {
       alert("Please fill out all fields");
       return;
     }
 
-    const med = { id: Date.now(), ...newMedication };
-    setMedications([...medications, med]);
-    setShowForm(false);
-    setNewMedication({ name: "", dosage: "", schedule: "", status: "Active" });
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/patient/medications",
+        newMedication,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      // response.data.medications is the updated array
+      setMedications(response.data.medications);
+
+      setShowForm(false);
+      setNewMedication({ name: "", dosage: "", schedule: "", status: "Active" });
+    } catch (error) {
+      console.error("Failed to add medication:", error);
+      // handle error
+    }
   };
 
-  const handleDeleteMedication = (id) => {
-    const updatedMeds = medications.filter((med) => med.id !== id);
-    setMedications(updatedMeds);
+  // 3) Delete a medication
+  const handleDeleteMedication = async (medId: string) => {
+    try {
+      const response = await axios.delete(
+        `http://localhost:5000/api/patient/medications/${medId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      // Updated medication array
+      setMedications(response.data.medications);
+    } catch (error) {
+      console.error("Failed to delete medication:", error);
+      // handle error
+    }
   };
 
   return (
@@ -104,13 +146,13 @@ const MedicationsPage = () => {
       )}
 
       <div className="grid gap-6">
-        {medications.map((med) => (
+        {medications.map((med: any) => (
           <div
-            key={med.id}
+            key={med._id} // NOTE: Now we use _id from MongoDB
             className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative"
           >
             <button
-              onClick={() => handleDeleteMedication(med.id)}
+              onClick={() => handleDeleteMedication(med._id)}
               className="absolute top-16 right-9 bg-red-600 text-white p-2 rounded-full hover:bg-red-700"
             >
               <Trash className="w-4 h-4" />
