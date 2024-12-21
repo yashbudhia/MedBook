@@ -78,14 +78,14 @@ const NavigationBar = () => {
 
             {/* Show Dashboard link only if user is a doctor (Optional) */}
             {/* Uncomment the below block if you have a separate Doctor Dashboard */}
-            {/* {userType === "doctor" && (
+            {userType === "doctor" && (
               <Link
-                to="/doctor-dashboard"
+                to="/doctorDashboard"
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
                 Dashboard
               </Link>
-            )} */}
+            )}
 
             {/* Show Sign Out button if user is logged in */}
             {userType && (

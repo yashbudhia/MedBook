@@ -7,6 +7,7 @@ const pdfParse = require("pdf-parse"); // For parsing PDF content
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const cors = require("cors");
 const { MongoClient, ObjectId } = require("mongodb"); // Include ObjectId for querying by ID
+const path = require("path");
 
 require("dotenv").config();
 
@@ -109,23 +110,27 @@ app.post("/upload", upload.single("medicalReport"), async (req, res) => {
     console.log(`File uploaded: ${file.originalname}`);
     let extractedText = "";
 
+    // Determine a permanent path for the uploaded file
+    const permanentPath = path.join(__dirname, "uploads", file.originalname);
+    fs.renameSync(file.path, permanentPath); // Move file to the permanent location
+
     // Extract text from the uploaded file
     if (file.mimetype === "application/pdf") {
       try {
-        const pdfData = fs.readFileSync(file.path);
+        const pdfData = fs.readFileSync(permanentPath);
         const pdfContent = await pdfParse(pdfData);
         extractedText = pdfContent.text;
 
         if (!extractedText.trim()) {
           console.warn("PDF contains no text. Attempting OCR...");
-          extractedText = await extractTextFromPdfUsingOCR(file.path);
+          extractedText = await extractTextFromPdfUsingOCR(permanentPath);
         }
       } catch (error) {
         console.error("PDF parsing failed. Attempting OCR...");
-        extractedText = await extractTextFromPdfUsingOCR(file.path);
+        extractedText = await extractTextFromPdfUsingOCR(permanentPath);
       }
     } else if (file.mimetype.startsWith("image/")) {
-      const { data } = await tesseract.recognize(file.path, "eng");
+      const { data } = await tesseract.recognize(permanentPath, "eng");
       extractedText = data.text;
     } else {
       return res.status(400).send("Unsupported file type.");
@@ -167,7 +172,7 @@ app.post("/upload", upload.single("medicalReport"), async (req, res) => {
     const insertResult = await collection.insertOne({
       ...structuredData,
       fileName: file.originalname,
-      filePath: file.path,
+      filePath: permanentPath, // Save the permanent path
       uploadDate: new Date(),
     });
 
@@ -181,10 +186,6 @@ app.post("/upload", upload.single("medicalReport"), async (req, res) => {
   } catch (error) {
     console.error("Error processing file:", error.message);
     res.status(500).send("Internal Server Error.");
-  } finally {
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
   }
 });
 
@@ -247,10 +248,15 @@ app.get("/api/download/:id", async (req, res) => {
     });
 
     if (!fileData) {
-      return res.status(404).send("File not found.");
+      return res.status(404).send("File not found in the database.");
     }
 
-    res.download(fileData.filePath, fileData.fileName);
+    const filePath = path.resolve(fileData.filePath); // Resolve the full path
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).send("File does not exist on the server.");
+    }
+
+    res.download(filePath, fileData.fileName);
   } catch (error) {
     console.error("Error downloading file:", error.message);
     res.status(500).send("Failed to download file.");
