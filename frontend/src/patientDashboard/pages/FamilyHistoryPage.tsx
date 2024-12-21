@@ -3,9 +3,30 @@ import { Users, Plus, Trash } from "lucide-react";
 
 const FamilyHistoryPage = () => {
   const [familyMembers, setFamilyMembers] = useState(() => {
-    // Load initial state from localStorage
+    // Load initial state from localStorage, or use hardcoded data
     const savedMembers = localStorage.getItem("familyMembers");
-    return savedMembers ? JSON.parse(savedMembers) : [];
+    return savedMembers
+      ? JSON.parse(savedMembers)
+      : [
+          {
+            id: 1,
+            name: "Sarah Johnson",
+            relation: "Mother",
+            conditions: ["Type 2 Diabetes", "Hypertension"],
+          },
+          {
+            id: 2,
+            name: "Michael Johnson",
+            relation: "Father",
+            conditions: ["Heart Disease", "High Cholesterol"],
+          },
+          {
+            id: 3,
+            name: "Emily Johnson",
+            relation: "Sister",
+            conditions: ["Asthma"],
+          },
+        ];
   });
   const [showForm, setShowForm] = useState(false);
   const [newMember, setNewMember] = useState({
