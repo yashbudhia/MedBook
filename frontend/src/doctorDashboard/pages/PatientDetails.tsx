@@ -6,6 +6,7 @@ import { ActionWidgets } from "../../componenets/doctor/ActionWidgets";
 import { VitalsChart } from "../../componenets/doctor/VitalsChart";
 import { MedicalHistory } from "../../componenets/doctor/MedicalHistory";
 import { GraphCard } from "../../componenets/doctor/GraphCard";
+import Graph from "../../pages/Graph";
 
 export function PatientDetails() {
   const { id } = useParams();
@@ -31,7 +32,7 @@ export function PatientDetails() {
           <VitalsChart />
           <MedicalHistory />
         </div>
-        <GraphCard />
+        <Graph />
       </div>
     </DashboardLayout>
   );
