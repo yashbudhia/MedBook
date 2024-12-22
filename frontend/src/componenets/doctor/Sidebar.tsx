@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Settings,
   Bell,
+  LogOut,
 } from "lucide-react";
 
 interface NavItem {
@@ -28,11 +29,25 @@ export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Sign out handler
+  const handleSignOut = () => {
+    // 1) Remove token and userType from localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("userType");
+
+    // 2) Navigate to homepage
+    navigate("/");
+
+    // 3) Force a one-time page reload
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
+  };
+
   return (
     <div className="w-64 bg-white dark:bg-gray-800 h-full border-r border-gray-200 dark:border-gray-700 fixed left-0 top-0 pt-16">
       <nav className="px-4 space-y-1 mt-4">
-        {" "}
-        {/* Added mt-4 for margin-top */}
+        {/* Navigation Items */}
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -53,6 +68,17 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Sign Out Button */}
+      <div className="p-4 w-full px-4 py-3 absolute bottom-0 border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={handleSignOut}
+          className="flex  items-center space-x-3 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors w-full px-4 py-2"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Sign Out</span>
+        </button>
+      </div>
     </div>
   );
 }
