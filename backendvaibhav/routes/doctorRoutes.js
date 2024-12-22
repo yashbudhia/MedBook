@@ -38,6 +38,8 @@ router.post('/signin', async (req, res) => {
         const secret = process.env.JWT_SECRET || 'default_secret';
         // include userType: 'doctor'
         const token = jwt.sign({ id: doctor._id, userType: 'doctor' }, secret, { expiresIn: '1h' });
+        doctor.token = token;
+        await doctor.save();
 
         res.status(200).json({
             token,
