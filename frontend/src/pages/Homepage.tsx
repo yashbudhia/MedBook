@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ClipboardList, Shield, Users, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import NavigationBar from "../componenets/Navbar";
+import RealtimeHealthNews from "./RealTime";
 
 const HomePage: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -76,7 +77,8 @@ const HomePage: React.FC = () => {
               {isLoggedIn && (
                 <div className="mt-8 sm:max-w-lg sm:mx-auto lg:mx-0">
                   <div className="text-lg text-blue-600 font-medium">
-                    Welcome back, {userType === "doctor" ? "Doctor" : "Patient"}!
+                    Welcome back, {userType === "doctor" ? "Doctor" : "Patient"}
+                    !
                   </div>
                 </div>
               )}
@@ -146,6 +148,7 @@ const HomePage: React.FC = () => {
             </div>
           </div>
         </div>
+        <RealtimeHealthNews />
       </main>
     </div>
   );

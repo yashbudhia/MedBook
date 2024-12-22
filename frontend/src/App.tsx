@@ -23,6 +23,7 @@ import Messages from "./doctorDashboard/pages/Messages";
 import { Notifications } from "./doctorDashboard/pages/Notifications";
 import Settings from "./doctorDashboard/pages/Settings";
 import { ThemeProvider } from "./componenets/doctor/ThemeContext";
+import Realtime from "./pages/RealTime";
 
 function App() {
   return (
@@ -33,11 +34,13 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/patientlogin" element={<PatientLogin />} />
         <Route path="/doctorlogin" element={<DoctorLogin />} />
+        <Route path="/realtime" element={<Realtime />} />
 
         {/* Patient Dashboard Routes */}
         <Route element={<Layout />}>
           <Route path="/patientDashboard" element={<DashboardPage />} />
           <Route path="/graph" element={<Graph />} />
+
           <Route path="/records" element={<RecordsPage />} />
           <Route path="/family" element={<FamilyHistoryPage />} />
           <Route path="/appointments" element={<AppointmentsPage />} />

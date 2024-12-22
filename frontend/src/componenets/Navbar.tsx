@@ -60,7 +60,7 @@ const NavigationBar = () => {
               className="ml-2 text-xl font-semibold text-gray-900 cursor-pointer"
               onClick={() => navigate("/")}
             >
-              MedRecord
+              MedBook
             </span>
           </div>
 
