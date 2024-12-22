@@ -106,16 +106,14 @@ router.post(
 router.get('/medications', auth, async (req, res) => {
     try {
         // userType can be 'patient' or 'doctor'
-        // If 'patient', then `req.user` is the patient
-        // If 'doctor', do we want them to specify which patient to fetch?
-        // For simplicity, let's assume doctors can only see their own data or we skip logic.
-
         if (req.userType === 'patient') {
             const patient = req.user; // the logged-in patient
             return res.status(200).json({ medications: patient.medications });
         } else {
             // for doctor, you might do something else, e.g. require a patientId param
-            return res.status(403).json({ error: 'Doctors cannot view medications for a patient unless patientId is specified' });
+            return res
+                .status(403)
+                .json({ error: 'Doctors cannot view medications for a patient unless patientId is specified' });
         }
     } catch (err) {
         console.error('Fetch Medications Error:', err);
@@ -134,7 +132,9 @@ router.post(
     async (req, res) => {
         try {
             if (req.userType !== 'patient') {
-                return res.status(403).json({ error: 'Only patients can add medications to their own record' });
+                return res
+                    .status(403)
+                    .json({ error: 'Only patients can add medications to their own record' });
             }
 
             const { name, dosage, schedule, status } = req.body;
@@ -152,7 +152,7 @@ router.post(
 
             return res.status(201).json({
                 message: 'Medication added successfully',
-                medications: patient.medications
+                medications: patient.medications,
             });
         } catch (err) {
             console.error('Add Medication Error:', err);
@@ -165,7 +165,9 @@ router.post(
 router.delete('/medications/:medId', auth, async (req, res) => {
     try {
         if (req.userType !== 'patient') {
-            return res.status(403).json({ error: 'Only patients can delete medications from their own record' });
+            return res
+                .status(403)
+                .json({ error: 'Only patients can delete medications from their own record' });
         }
 
         const { medId } = req.params;
@@ -192,7 +194,107 @@ router.delete('/medications/:medId', auth, async (req, res) => {
 /* -------------------------
    FAMILY HISTORY ROUTES
 --------------------------*/
-// Similar logic to medication routes, skipping for brevity
+
+/**
+ * GET the family history for the logged-in patient
+ */
+router.get('/family-history', auth, async (req, res) => {
+    try {
+        if (req.userType !== 'patient') {
+            return res
+                .status(403)
+                .json({ error: 'Only patients can view their own family history' });
+        }
+
+        const patient = req.user;
+        return res.status(200).json({ familyHistory: patient.familyHistory });
+    } catch (err) {
+        console.error('Fetch Family History Error:', err);
+        res.status(500).json({ error: 'Failed to fetch family history' });
+    }
+});
+
+/**
+ * POST a new family member
+ */
+router.post(
+    '/family-history',
+    auth,
+    [
+        body('name').notEmpty().withMessage('Name is required'),
+        body('relation').notEmpty().withMessage('Relation is required'),
+        body('conditions').notEmpty().withMessage('Conditions are required'),
+    ],
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        try {
+            if (req.userType !== 'patient') {
+                return res
+                    .status(403)
+                    .json({ error: 'Only patients can add family history to their own record' });
+            }
+
+            const patient = req.user;
+            const { name, relation, conditions } = req.body;
+
+            // If multiple conditions are passed in a comma-separated string
+            const conditionsArray = conditions.split(',').map((c) => c.trim());
+
+            const newFamilyMember = {
+                name,
+                relation,
+                conditions: conditionsArray,
+            };
+
+            patient.familyHistory.push(newFamilyMember);
+            await patient.save();
+
+            res.status(201).json({
+                message: 'Family member added successfully',
+                familyHistory: patient.familyHistory,
+            });
+        } catch (err) {
+            console.error('Add Family Member Error:', err);
+            res.status(500).json({ error: 'Failed to add family member' });
+        }
+    }
+);
+
+/**
+ * DELETE a family member by _id
+ */
+router.delete('/family-history/:famId', auth, async (req, res) => {
+    try {
+        if (req.userType !== 'patient') {
+            return res
+                .status(403)
+                .json({ error: 'Only patients can delete family members from their own record' });
+        }
+
+        const { famId } = req.params;
+        const patient = req.user;
+
+        const familyMember = patient.familyHistory.id(famId);
+        if (!familyMember) {
+            return res.status(404).json({ error: 'Family member not found' });
+        }
+
+        patient.familyHistory.pull({ _id: famId });
+        await patient.save();
+
+        return res.status(200).json({
+            message: 'Family member deleted successfully',
+            familyHistory: patient.familyHistory,
+        });
+    } catch (err) {
+        console.error('Delete Family Member Error:', err);
+        res.status(500).json({ error: 'Failed to delete family member' });
+    }
+});
 
 /* -------------------------
    APPOINTMENT ROUTES
@@ -216,27 +318,21 @@ router.post(
 
         try {
             const { type, doctorUserId, date, time } = req.body;
-
-            // If user is a patient, we use their id
-            // If user is a doctor, do we allow them to create an appointment for themselves or for a patient?
-            // For simplicity, let's assume a doctor can only create an appointment for themselves. 
-            // If you want a doctor to create an appointment for a patient, you'll need a patientId param.
-
             let patientId;
+
             if (req.userType === 'patient') {
                 patientId = req.user._id;
             } else if (req.userType === 'doctor') {
-                // If doctors want to create an appointment for themselves:
-                //   This doesn't make sense if "patient" is the main user.
-                //   Possibly you'd need a real patient ID to create.
-                //   For demonstration, let's just block doctors from creating an appointment this way:
+                // For simplicity, block doctor from creating an appointment this way
                 return res.status(403).json({ error: 'Doctors cannot create appointments this way' });
             }
 
             // find the doctor by userId
             const doctor = await Doctor.findOne({ userId: doctorUserId });
             if (!doctor) {
-                return res.status(404).json({ error: `Doctor with userId '${doctorUserId}' does not exist` });
+                return res
+                    .status(404)
+                    .json({ error: `Doctor with userId '${doctorUserId}' does not exist` });
             }
 
             const newAppointment = new Appointment({
@@ -250,7 +346,7 @@ router.post(
 
             return res.status(201).json({
                 message: 'Appointment scheduled successfully',
-                appointment: newAppointment
+                appointment: newAppointment,
             });
         } catch (err) {
             console.error('Appointment Creation Error:', err);
@@ -267,8 +363,10 @@ router.get('/appointments', auth, async (req, res) => {
         }
         const patientId = req.user._id;
 
-        const appointments = await Appointment.find({ patient: patientId })
-            .populate('doctor', 'name email licenseNumber userId');
+        const appointments = await Appointment.find({ patient: patientId }).populate(
+            'doctor',
+            'name email licenseNumber userId'
+        );
 
         return res.status(200).json({ appointments });
     } catch (err) {
@@ -300,11 +398,17 @@ router.delete('/appointments/:id', auth, async (req, res) => {
         res.status(500).json({ error: 'Failed to delete appointment' });
     }
 });
+
+/* -------------------------
+   DOCTOR-ACCESSIBLE PATIENT INFO
+--------------------------*/
 router.get('/:patientUserId/patient-info', auth, async (req, res) => {
     try {
         // 1) Confirm the caller is a doctor
         if (req.userType !== 'doctor') {
-            return res.status(403).json({ error: 'Only doctors can access another patient\'s info' });
+            return res
+                .status(403)
+                .json({ error: 'Only doctors can access another patient\'s info' });
         }
 
         // 2) Parse the patientUserId from the route param
@@ -317,16 +421,13 @@ router.get('/:patientUserId/patient-info', auth, async (req, res) => {
         }
 
         // 4) Return the patient's data to the doctor
-        // NOTE: Decide which fields you want to expose
-        // For example, below we show name, email, userId, familyHistory, etc.
-        // You might want to exclude the password or other sensitive fields.
         const safeData = {
             name: patient.name,
             email: patient.email,
             userId: patient.userId,
             medications: patient.medications,
             familyHistory: patient.familyHistory,
-            // or any other fields you want to show
+            // or any other fields you want to expose
         };
 
         return res.status(200).json({ patient: safeData });

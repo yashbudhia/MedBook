@@ -1,3 +1,5 @@
+// components/patient/PatientDashboard.tsx
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
@@ -53,30 +55,26 @@ const PatientDashboard: React.FC = () => {
     try {
       const response = await axios.get('http://localhost:5000/api/patient/appointments', {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       const allAppointments: Appointment[] = response.data.appointments;
-      setAppointments(allAppointments);
 
-      // 2a) Determine the next future appointment
-      const upcoming = allAppointments
-        .filter((apt) => {
-          // parse date/time into a Date object
-          const aptDate = new Date(apt.date);
-          return aptDate.getTime() > Date.now(); // future only
-        })
-        .sort((a, b) => {
-          // sort by date/time ascending
-          return new Date(a.date).getTime() - new Date(b.date).getTime();
-        });
+      // Sort appointments by creation time descending based on _id
+      const sortedAppointments = allAppointments.sort((a, b) => {
+        const aTimestamp = parseInt(a._id.substring(0, 8), 16);
+        const bTimestamp = parseInt(b._id.substring(0, 8), 16);
+        return bTimestamp - aTimestamp;
+      });
 
-      if (upcoming.length > 0) {
-        setNextAppointment(upcoming[0]);
+      setAppointments(sortedAppointments);
+
+      if (sortedAppointments.length > 0) {
+        setNextAppointment(sortedAppointments[0]);
       } else {
         setNextAppointment(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Fetch Appointments Error:', err);
     }
   };
@@ -87,11 +85,11 @@ const PatientDashboard: React.FC = () => {
     try {
       const response = await axios.get('http://localhost:5000/api/patient/medications', {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       setMedications(response.data.medications);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Fetch Medications Error:', err);
     }
   };

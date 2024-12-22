@@ -1,3 +1,5 @@
+// components/doctor/DoctorSignUp.tsx
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserRound, Mail, ScrollText, Lock } from 'lucide-react';
@@ -11,12 +13,13 @@ const DoctorSignUp = () => {
     userId: '',
     password: '',
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const navigate = useNavigate(); // React Router's hook for navigation
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null); // Reset error state
     try {
       // POST to signup endpoint
       const response = await axios.post('http://localhost:5000/api/doctor/signup', formData);
@@ -37,9 +40,28 @@ const DoctorSignUp = () => {
           window.location.reload();
         }, 100);
       }, 2000);
-
-    } catch (err) {
-      setError('Signup failed');
+    } catch (err: any) {
+      if (axios.isAxiosError(err)) {
+        if (err.response) {
+          if (err.response.data) {
+            if (err.response.data.error) {
+              setError(err.response.data.error);
+            } else if (err.response.data.errors) {
+              // Handle validation errors
+              const validationErrors = err.response.data.errors.map((error: any) => error.msg).join(', ');
+              setError(validationErrors);
+            } else {
+              setError('Signup failed. Please try again.');
+            }
+          } else {
+            setError('Signup failed. Please try again.');
+          }
+        } else {
+          setError('No response from server. Please try again later.');
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
     }
   };
 
