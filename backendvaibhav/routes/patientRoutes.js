@@ -5,6 +5,9 @@ const { body, validationResult } = require('express-validator');
 const Patient = require('../models/Patient');
 const auth = require('../middleware/auth'); // Import the auth middleware
 const router = express.Router();
+const Appointment = require('../models/Appointment');
+const Doctor = require('../models/Doctor'); // We'll need to find the doctor
+
 
 // Sign Up
 router.post(
@@ -85,11 +88,7 @@ router.post(
     }
 );
 
-/* -------------------------------------------------------
-   MEDICATION ROUTES
-------------------------------------------------------- */
 
-// GET all medications for the logged-in patient
 router.get('/medications', auth, async (req, res) => {
     try {
         const patient = req.patient;
@@ -100,7 +99,7 @@ router.get('/medications', auth, async (req, res) => {
     }
 });
 
-// POST a new medication
+
 router.post(
     '/medications',
     auth,
@@ -243,6 +242,100 @@ router.delete('/family-history/:famId', auth, async (req, res) => {
     } catch (err) {
         console.error('Delete Family Member Error:', err);
         res.status(500).json({ error: 'Failed to delete family member' });
+    }
+});
+
+//For appointment 
+//post an appointment
+// POST /appointments
+// POST /appointments
+router.post(
+    '/appointments',
+    auth, // Ensure only authenticated patients can create an appointment
+    [
+        body('type').notEmpty().withMessage('Appointment type is required'),
+        body('doctorUserId').notEmpty().withMessage('Doctor User ID is required'),
+        body('date').notEmpty().withMessage('Date is required'),
+        body('time').notEmpty().withMessage('Time is required'),
+    ],
+    async (req, res) => {
+        // 1) Validate input
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        try {
+            const { type, doctorUserId, date, time } = req.body;
+            const patient = req.patient; // from auth middleware
+
+            // 2) Find the doctor by userId
+            const doctor = await Doctor.findOne({ userId: doctorUserId });
+            if (!doctor) {
+                // Throw an error if the Doctor's userId doesn't exist
+                return res.status(404).json({ error: `Doctor with userId '${doctorUserId}' does not exist` });
+            }
+
+            // 3) Create a new Appointment referencing both patient & doctor
+            const newAppointment = new Appointment({
+                patient: patient._id,
+                doctor: doctor._id,
+                type,
+                date,
+                time,
+            });
+
+            // 4) Save and respond
+            await newAppointment.save();
+            return res.status(201).json({
+                message: 'Appointment scheduled successfully',
+                appointment: newAppointment
+            });
+        } catch (err) {
+            console.error('Appointment Creation Error:', err);
+            res.status(500).json({ error: 'Failed to create appointment' });
+        }
+    }
+);
+
+// GET /appointments
+router.get('/appointments', auth, async (req, res) => {
+    try {
+        const patient = req.patient;
+
+        // Find all appointments for this patient, optionally populate doctor details
+        const appointments = await Appointment
+            .find({ patient: patient._id })
+            .populate('doctor', 'name email licenseNumber');
+        // .populate('patient', 'name email') // If needed
+
+        return res.status(200).json({ appointments });
+    } catch (err) {
+        console.error('Fetch Appointments Error:', err);
+        res.status(500).json({ error: 'Failed to fetch appointments' });
+    }
+});
+// DELETE /appointments/:id
+// DELETE /appointments/:id
+router.delete('/appointments/:id', auth, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const patient = req.patient;
+
+        // 1) Find & delete the appointment owned by this patient
+        const appointment = await Appointment.findOneAndDelete({
+            _id: id,
+            patient: patient._id, // Only delete if the appointment belongs to this patient
+        });
+
+        if (!appointment) {
+            return res.status(404).json({ error: 'Appointment not found' });
+        }
+
+        return res.status(200).json({ message: 'Appointment deleted successfully' });
+    } catch (err) {
+        console.error('Delete Appointment Error:', err);
+        res.status(500).json({ error: 'Failed to delete appointment' });
     }
 });
 
