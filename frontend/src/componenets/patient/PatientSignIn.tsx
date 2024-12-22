@@ -23,7 +23,7 @@ const PatientSignIn = () => {
       alert("Login successful!");
 
       // 1) Navigate to homepage
-      navigate("/dashboard");
+      navigate("/patientDashboard");
 
       // 2) Then force one-time reload
       setTimeout(() => {
