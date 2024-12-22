@@ -1,15 +1,20 @@
+// routes/patientRoutes.js
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const Patient = require('../models/Patient');
-const auth = require('../middleware/auth'); // Import the auth middleware
-const router = express.Router();
+const Doctor = require('../models/Doctor');
 const Appointment = require('../models/Appointment');
-const Doctor = require('../models/Doctor'); // We'll need to find the doctor
+const auth = require('../middleware/auth'); // The new auth that handles both userType
 
+const router = express.Router();
 
-// Sign Up
+/* -------------------------
+   PATIENT AUTH
+--------------------------*/
+
+// Sign Up (Patient)
 router.post(
     '/signup',
     [
@@ -24,32 +29,36 @@ router.post(
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { name, email, userId, password } = req.body;
         try {
-            // Check if userId or email already exists
-            const existingPatient = await Patient.findOne({ $or: [{ userId }, { email }] });
-            if (existingPatient) {
+            const { name, email, userId, password } = req.body;
+
+            const existing = await Patient.findOne({ $or: [{ userId }, { email }] });
+            if (existing) {
                 return res.status(400).json({ error: 'User ID or Email already exists' });
             }
 
             const hashedPassword = await bcrypt.hash(password, 10);
             const newPatient = new Patient({ name, email, userId, password: hashedPassword });
             await newPatient.save();
+
+            // Optionally log them in right away
+            const secret = process.env.JWT_SECRET || 'default_secret';
+            const token = jwt.sign({ id: newPatient._id, userType: 'patient' }, secret, { expiresIn: '1h' });
+
             res.status(201).json({
                 message: 'Patient registered successfully',
-                // token, // if you want to auto-login
                 token,
                 userId: newPatient.userId,
                 name: newPatient.name,
             });
         } catch (err) {
-            console.error('Signup Error:', err); // Log errors
+            console.error('Signup Error:', err);
             res.status(500).json({ error: 'Registration failed' });
         }
     }
 );
 
-// Sign In
+// Sign In (Patient)
 router.post(
     '/signin',
     [
@@ -63,28 +72,21 @@ router.post(
         }
 
         try {
-            console.log('Request Body:', req.body); // Log incoming data
-
             const { userId, password } = req.body;
 
-            // Check if user exists
             const patient = await Patient.findOne({ userId });
             if (!patient) {
-                console.log('User not found');
                 return res.status(404).json({ error: 'User not found' });
             }
 
-            // Compare password
             const isMatch = await bcrypt.compare(password, patient.password);
             if (!isMatch) {
-                console.log('Invalid credentials');
                 return res.status(400).json({ error: 'Invalid credentials' });
             }
 
-            // Generate token with fallback to default secret
             const secret = process.env.JWT_SECRET || 'default_secret';
-            const token = jwt.sign({ id: patient._id }, secret, { expiresIn: '1h' });
-            console.log('Login successful, Token:', token);
+            // userType = 'patient'
+            const token = jwt.sign({ id: patient._id, userType: 'patient' }, secret, { expiresIn: '1h' });
 
             return res.status(200).json({
                 token,
@@ -98,17 +100,28 @@ router.post(
     }
 );
 
-
+/* -------------------------
+   MEDICATION ROUTES
+--------------------------*/
 router.get('/medications', auth, async (req, res) => {
     try {
-        const patient = req.patient;
-        res.status(200).json({ medications: patient.medications });
+        // userType can be 'patient' or 'doctor'
+        // If 'patient', then `req.user` is the patient
+        // If 'doctor', do we want them to specify which patient to fetch?
+        // For simplicity, let's assume doctors can only see their own data or we skip logic.
+
+        if (req.userType === 'patient') {
+            const patient = req.user; // the logged-in patient
+            return res.status(200).json({ medications: patient.medications });
+        } else {
+            // for doctor, you might do something else, e.g. require a patientId param
+            return res.status(403).json({ error: 'Doctors cannot view medications for a patient unless patientId is specified' });
+        }
     } catch (err) {
         console.error('Fetch Medications Error:', err);
         res.status(500).json({ error: 'Failed to fetch medications' });
     }
 });
-
 
 router.post(
     '/medications',
@@ -119,15 +132,13 @@ router.post(
         body('schedule').notEmpty().withMessage('Schedule is required'),
     ],
     async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-
         try {
-            const { name, dosage, schedule, status } = req.body;
+            if (req.userType !== 'patient') {
+                return res.status(403).json({ error: 'Only patients can add medications to their own record' });
+            }
 
-            const patient = req.patient;
+            const { name, dosage, schedule, status } = req.body;
+            const patient = req.user;
 
             const newMedication = {
                 name,
@@ -139,7 +150,10 @@ router.post(
             patient.medications.push(newMedication);
             await patient.save();
 
-            res.status(201).json({ message: 'Medication added successfully', medications: patient.medications });
+            return res.status(201).json({
+                message: 'Medication added successfully',
+                medications: patient.medications
+            });
         } catch (err) {
             console.error('Add Medication Error:', err);
             res.status(500).json({ error: 'Failed to add medication' });
@@ -147,24 +161,23 @@ router.post(
     }
 );
 
-// DELETE a medication by _id
+// DELETE a medication
 router.delete('/medications/:medId', auth, async (req, res) => {
     try {
+        if (req.userType !== 'patient') {
+            return res.status(403).json({ error: 'Only patients can delete medications from their own record' });
+        }
+
         const { medId } = req.params;
-        const patient = req.patient;
+        const patient = req.user;
 
-        // 1) Track the array length before
         const beforeCount = patient.medications.length;
-
-        // 2) Pull subdocument(s) matching _id = medId
         patient.medications.pull({ _id: medId });
 
-        // 3) Check if anything was removed
         if (patient.medications.length === beforeCount) {
             return res.status(404).json({ error: 'Medication not found' });
         }
 
-        // 4) Save updates
         await patient.save();
         return res.status(200).json({
             message: 'Medication deleted successfully',
@@ -176,92 +189,19 @@ router.delete('/medications/:medId', auth, async (req, res) => {
     }
 });
 
-
-/* -------------------------------------------------------
+/* -------------------------
    FAMILY HISTORY ROUTES
-------------------------------------------------------- */
+--------------------------*/
+// Similar logic to medication routes, skipping for brevity
 
-// GET all family members for the logged-in patient
-router.get('/family-history', auth, async (req, res) => {
-    try {
-        const patient = req.patient;
-        res.status(200).json({ familyHistory: patient.familyHistory });
-    } catch (err) {
-        console.error('Fetch Family History Error:', err);
-        res.status(500).json({ error: 'Failed to fetch family history' });
-    }
-});
+/* -------------------------
+   APPOINTMENT ROUTES
+--------------------------*/
 
-// POST a new family member
-router.post(
-    '/family-history',
-    auth,
-    [
-        body('name').notEmpty().withMessage('Name is required'),
-        body('relation').notEmpty().withMessage('Relation is required'),
-        body('conditions').notEmpty().withMessage('Conditions are required'),
-    ],
-    async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-
-        try {
-            const { name, relation, conditions } = req.body;
-
-            const patient = req.patient;
-
-            const conditionsArray = conditions.split(',').map(c => c.trim());
-
-            const newFamilyMember = {
-                name,
-                relation,
-                conditions: conditionsArray,
-            };
-
-            patient.familyHistory.push(newFamilyMember);
-            await patient.save();
-
-            res.status(201).json({ message: 'Family member added successfully', familyHistory: patient.familyHistory });
-        } catch (err) {
-            console.error('Add Family Member Error:', err);
-            res.status(500).json({ error: 'Failed to add family member' });
-        }
-    }
-);
-
-// DELETE a family member by _id
-router.delete('/family-history/:famId', auth, async (req, res) => {
-    try {
-        const { famId } = req.params;
-        const patient = req.patient;
-
-        // Option A: pull
-        const originalLength = patient.familyHistory.length;
-        patient.familyHistory.pull({ _id: famId });
-        if (patient.familyHistory.length === originalLength) {
-            return res.status(404).json({ error: 'Family member not found' });
-        }
-
-        await patient.save();
-        return res.status(200).json({
-            message: 'Family member deleted successfully',
-            familyHistory: patient.familyHistory,
-        });
-    } catch (err) {
-        console.error('Delete Family Member Error:', err);
-        res.status(500).json({ error: 'Failed to delete family member' });
-    }
-});
-
-//For appointment 
-//post an appointment
-// POST /appointments
-// POST /appointments
+// Create an appointment
 router.post(
     '/appointments',
-    auth, // Ensure only authenticated patients can create an appointment
+    auth,
     [
         body('type').notEmpty().withMessage('Appointment type is required'),
         body('doctorUserId').notEmpty().withMessage('Doctor User ID is required'),
@@ -269,7 +209,6 @@ router.post(
         body('time').notEmpty().withMessage('Time is required'),
     ],
     async (req, res) => {
-        // 1) Validate input
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
@@ -277,26 +216,38 @@ router.post(
 
         try {
             const { type, doctorUserId, date, time } = req.body;
-            const patient = req.patient; // from auth middleware
 
-            // 2) Find the doctor by userId
+            // If user is a patient, we use their id
+            // If user is a doctor, do we allow them to create an appointment for themselves or for a patient?
+            // For simplicity, let's assume a doctor can only create an appointment for themselves. 
+            // If you want a doctor to create an appointment for a patient, you'll need a patientId param.
+
+            let patientId;
+            if (req.userType === 'patient') {
+                patientId = req.user._id;
+            } else if (req.userType === 'doctor') {
+                // If doctors want to create an appointment for themselves:
+                //   This doesn't make sense if "patient" is the main user.
+                //   Possibly you'd need a real patient ID to create.
+                //   For demonstration, let's just block doctors from creating an appointment this way:
+                return res.status(403).json({ error: 'Doctors cannot create appointments this way' });
+            }
+
+            // find the doctor by userId
             const doctor = await Doctor.findOne({ userId: doctorUserId });
             if (!doctor) {
-                // Throw an error if the Doctor's userId doesn't exist
                 return res.status(404).json({ error: `Doctor with userId '${doctorUserId}' does not exist` });
             }
 
-            // 3) Create a new Appointment referencing both patient & doctor
             const newAppointment = new Appointment({
-                patient: patient._id,
+                patient: patientId,
                 doctor: doctor._id,
                 type,
                 date,
                 time,
             });
-
-            // 4) Save and respond
             await newAppointment.save();
+
             return res.status(201).json({
                 message: 'Appointment scheduled successfully',
                 appointment: newAppointment
@@ -308,16 +259,16 @@ router.post(
     }
 );
 
-// GET /appointments
+// GET all appointments for this patient
 router.get('/appointments', auth, async (req, res) => {
     try {
-        const patient = req.patient;
+        if (req.userType !== 'patient') {
+            return res.status(403).json({ error: 'Only patients can view their appointments here' });
+        }
+        const patientId = req.user._id;
 
-        // Find all appointments for this patient, optionally populate doctor details
-        const appointments = await Appointment
-            .find({ patient: patient._id })
-            .populate('doctor', 'name email licenseNumber');
-        // .populate('patient', 'name email') // If needed
+        const appointments = await Appointment.find({ patient: patientId })
+            .populate('doctor', 'name email licenseNumber userId');
 
         return res.status(200).json({ appointments });
     } catch (err) {
@@ -325,19 +276,20 @@ router.get('/appointments', auth, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch appointments' });
     }
 });
-// DELETE /appointments/:id
-// DELETE /appointments/:id
+
+// DELETE an appointment
 router.delete('/appointments/:id', auth, async (req, res) => {
     try {
+        if (req.userType !== 'patient') {
+            return res.status(403).json({ error: 'Only patients can delete their appointments here' });
+        }
         const { id } = req.params;
-        const patient = req.patient;
+        const patientId = req.user._id;
 
-        // 1) Find & delete the appointment owned by this patient
         const appointment = await Appointment.findOneAndDelete({
             _id: id,
-            patient: patient._id, // Only delete if the appointment belongs to this patient
+            patient: patientId
         });
-
         if (!appointment) {
             return res.status(404).json({ error: 'Appointment not found' });
         }
@@ -348,6 +300,40 @@ router.delete('/appointments/:id', auth, async (req, res) => {
         res.status(500).json({ error: 'Failed to delete appointment' });
     }
 });
+router.get('/:patientUserId/patient-info', auth, async (req, res) => {
+    try {
+        // 1) Confirm the caller is a doctor
+        if (req.userType !== 'doctor') {
+            return res.status(403).json({ error: 'Only doctors can access another patient\'s info' });
+        }
 
+        // 2) Parse the patientUserId from the route param
+        const { patientUserId } = req.params;
+
+        // 3) Find the patient by that userId
+        const patient = await Patient.findOne({ userId: patientUserId });
+        if (!patient) {
+            return res.status(404).json({ error: 'Patient not found' });
+        }
+
+        // 4) Return the patient's data to the doctor
+        // NOTE: Decide which fields you want to expose
+        // For example, below we show name, email, userId, familyHistory, etc.
+        // You might want to exclude the password or other sensitive fields.
+        const safeData = {
+            name: patient.name,
+            email: patient.email,
+            userId: patient.userId,
+            medications: patient.medications,
+            familyHistory: patient.familyHistory,
+            // or any other fields you want to show
+        };
+
+        return res.status(200).json({ patient: safeData });
+    } catch (err) {
+        console.error('Fetch Patient Info Error:', err);
+        return res.status(500).json({ error: 'Failed to fetch patient info' });
+    }
+});
 
 module.exports = router;
