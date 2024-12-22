@@ -11,7 +11,6 @@ import FamilyHistoryPage from "./patientDashboard/pages/FamilyHistoryPage";
 import AppointmentsPage from "./patientDashboard/pages/AppointmentsPage";
 import MedicationsPage from "./patientDashboard/pages/MedicationsPage";
 import VitalsPage from "./patientDashboard/pages/VitalsPage";
-import LabResultsPage from "./patientDashboard/pages/LabResultsPage";
 import MessagesPage from "./patientDashboard/pages/MessagesPage";
 import NotificationsPage from "./patientDashboard/pages/NotificationsPage";
 import SettingsPage from "./patientDashboard/pages/SettingsPage";
@@ -46,7 +45,6 @@ function App() {
           <Route path="/appointments" element={<AppointmentsPage />} />
           <Route path="/medications" element={<MedicationsPage />} />
           <Route path="/vitals" element={<VitalsPage />} />
-          <Route path="/lab-results" element={<LabResultsPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/settings" element={<SettingsPage />} />

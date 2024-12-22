@@ -21,7 +21,6 @@ const menuItems = [
   { icon: Calendar, label: "Appointments", path: "/appointments" },
   { icon: Pill, label: "Medications", path: "/medications" },
   { icon: HeartPulse, label: "Vital Signs", path: "/vitals" },
-  { icon: ClipboardList, label: "Lab Results", path: "/lab-results" },
   { icon: MessageSquare, label: "Messages", path: "/messages" },
   { icon: Bell, label: "Notifications", path: "/notifications" },
   { icon: Settings, label: "Settings", path: "/settings" },
@@ -60,10 +59,9 @@ const Sidebar = () => {
               <NavLink
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? "bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400"
+                  `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                    ? "bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400"
                   }`
                 }
               >

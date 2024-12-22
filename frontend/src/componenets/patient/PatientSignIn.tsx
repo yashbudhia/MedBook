@@ -21,6 +21,10 @@ const PatientSignIn = () => {
       localStorage.setItem("userType", "patient");
 
       alert("Login successful!");
+      localStorage.setItem('userId', response.data.userId);
+      localStorage.setItem('userName', response.data.name);
+
+
 
       // 1) Navigate to homepage
       navigate("/");

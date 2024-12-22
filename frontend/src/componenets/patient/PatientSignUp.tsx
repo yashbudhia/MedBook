@@ -30,6 +30,9 @@ const PatientSignUp = () => {
       localStorage.setItem('userType', 'patient');
 
       setSuccess('Signup successful! Redirecting to homepage...');
+      localStorage.setItem('userId', response.data.userId);
+      localStorage.setItem('userName', response.data.name);
+
       setFormData({ name: '', email: '', userId: '', password: '' });
 
       // Redirect to homepage after 2 seconds
