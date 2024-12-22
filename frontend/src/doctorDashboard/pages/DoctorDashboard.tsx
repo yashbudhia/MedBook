@@ -35,7 +35,7 @@ export function DoctorDashboard() {
   const navigate = useNavigate();
 
   const handlePatientSelect = (patientId: string) => {
-    navigate(`/doctor/patients/${patientId}`);
+    navigate(`/doctor/patient/${patientId}`);
   };
 
   return (
