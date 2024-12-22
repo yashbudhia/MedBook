@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // <-- import
 import { Calendar, Clock, Plus } from 'lucide-react';
 
-// import your token logic, if any (like from localStorage)
+// If storing token in localStorage
 const token = localStorage.getItem('token');
 
 const AppointmentsPage = () => {
@@ -16,7 +17,9 @@ const AppointmentsPage = () => {
   });
   const [error, setError] = useState('');
 
-  // Fetch appointments on mount
+  const navigate = useNavigate(); // for routing after creation
+
+  // OPTIONAL: fetch appointments on this page if you want to display them here
   const fetchAppointments = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/patient/appointments', {
@@ -48,13 +51,17 @@ const AppointmentsPage = () => {
       setShowForm(false);
       setFormData({ type: '', doctorUserId: '', date: '', time: '' });
       setError('');
+
+      // <-- Navigate to the dashboard route so the user sees it in PatientDashboard
+      navigate('/patientDashboard');
+      // Make sure you have <Route path="/patientDashboard" element={<PatientDashboard />} />
+      // in your React Router config.
+
     } catch (err: any) {
       console.error('Create Appointment Error:', err);
       if (err.response) {
-        // If server responded with an error
         if (err.response.status === 404 && err.response.data.error) {
-          // Doctor not found
-          setError(err.response.data.error); // "Doctor with userId 'xxx' does not exist"
+          setError(err.response.data.error);
         } else {
           setError(err.response.data.error || 'Failed to create appointment');
         }
@@ -75,7 +82,6 @@ const AppointmentsPage = () => {
           },
         }
       );
-      // Filter out the deleted appointment from local state
       setAppointments((prev) => prev.filter((apt) => apt._id !== appointmentId));
     } catch (err: any) {
       console.error('Delete Appointment Error:', err);
@@ -90,11 +96,14 @@ const AppointmentsPage = () => {
   return (
     <div className="p-8 space-y-6">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Appointments</h1>
-        <p className="text-gray-600 dark:text-gray-400">Schedule and manage your medical appointments</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          Appointments
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Schedule and manage your medical appointments
+        </p>
       </header>
 
-      {/* Display error messages */}
       {error && (
         <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-4">
           {error}
@@ -147,7 +156,7 @@ const AppointmentsPage = () => {
         </div>
       )}
 
-      {/* Display appointments */}
+      {/* Optional local display */}
       <div className="grid gap-4">
         {appointments.map((appointment) => (
           <div
@@ -164,13 +173,14 @@ const AppointmentsPage = () => {
                     {appointment.type}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {/* If you populated doctor details, display them */}
-                    Doctor ID: {appointment._id ?? 'N/A'}
+                    Doctor: {appointment.doctor?.userId ?? 'N/A'}
                   </p>
                   <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
                     <Clock className="w-4 h-4 mr-1" />
                     <span>{appointment.time}</span>
-                    <span className="ml-2">{appointment.date && appointment.date.substring(0, 10)}</span>
+                    <span className="ml-2">
+                      {appointment.date && appointment.date.substring(0, 10)}
+                    </span>
                   </div>
                 </div>
               </div>
