@@ -15,16 +15,26 @@ import LabResultsPage from "./patientDashboard/pages/LabResultsPage";
 import MessagesPage from "./patientDashboard/pages/MessagesPage";
 import NotificationsPage from "./patientDashboard/pages/NotificationsPage";
 import SettingsPage from "./patientDashboard/pages/SettingsPage";
+import { DoctorDashboard } from "./doctorDashboard/pages/DoctorDashboard";
+import { Patients } from "./doctorDashboard/pages/Patients";
+import { PatientDetails } from "./doctorDashboard/pages/PatientDetails";
+import { Appointments } from "./doctorDashboard/pages/Appointments";
+import Messages from "./doctorDashboard/pages/Messages";
+import { Notifications } from "./doctorDashboard/pages/Notifications";
+import Settings from "./doctorDashboard/pages/Settings";
+import { ThemeProvider } from "./componenets/doctor/ThemeContext";
 
 function App() {
   return (
     <>
       {/* Define all routes here */}
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
-
         <Route path="/patientlogin" element={<PatientLogin />} />
         <Route path="/doctorlogin" element={<DoctorLogin />} />
+
+        {/* Patient Dashboard Routes */}
         <Route element={<Layout />}>
           <Route path="/patientDashboard" element={<DashboardPage />} />
           <Route path="/graph" element={<Graph />} />
@@ -38,6 +48,24 @@ function App() {
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
+
+        {/* Doctor Dashboard Routes */}
+        <Route
+          path="/doctor/*"
+          element={
+            <ThemeProvider>
+              <Routes>
+                <Route path="dashboard" element={<DoctorDashboard />} />
+                <Route path="patients" element={<Patients />} />
+                <Route path="patient/:id" element={<PatientDetails />} />
+                <Route path="appointments" element={<Appointments />} />
+                <Route path="messages" element={<Messages />} />
+                <Route path="notifications" element={<Notifications />} />
+                <Route path="settings" element={<Settings />} />
+              </Routes>
+            </ThemeProvider>
+          }
+        />
       </Routes>
     </>
   );

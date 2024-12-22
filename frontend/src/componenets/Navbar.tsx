@@ -80,7 +80,7 @@ const NavigationBar = () => {
             {/* Uncomment the below block if you have a separate Doctor Dashboard */}
             {userType === "doctor" && (
               <Link
-                to="/doctorDashboard"
+                to="/doctor/dashboard"
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
                 Dashboard
