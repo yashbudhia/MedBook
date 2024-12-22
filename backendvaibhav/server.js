@@ -11,7 +11,7 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 const dburl =
-  "mongodb://localhost:27017/medbook"; // your Mongo URL
+  "mongodb+srv://yashbudhia:khuljas1ms1m@cluster0.nnafmtq.mongodb.net/medbook-users"; // your Mongo URL
 
 mongoose
   .connect(dburl, {})
