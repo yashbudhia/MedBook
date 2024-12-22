@@ -165,7 +165,7 @@ const AppointmentsPage = () => {
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {/* If you populated doctor details, display them */}
-                    Doctor ID: {appointment.doctorUserId ?? 'N/A'}
+                    Doctor ID: {appointment._id ?? 'N/A'}
                   </p>
                   <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
                     <Clock className="w-4 h-4 mr-1" />

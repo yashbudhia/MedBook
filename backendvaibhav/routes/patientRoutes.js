@@ -35,7 +35,13 @@ router.post(
             const hashedPassword = await bcrypt.hash(password, 10);
             const newPatient = new Patient({ name, email, userId, password: hashedPassword });
             await newPatient.save();
-            res.status(201).json({ message: 'Patient registered successfully' });
+            res.status(201).json({
+                message: 'Patient registered successfully',
+                // token, // if you want to auto-login
+                token,
+                userId: newPatient.userId,
+                name: newPatient.name,
+            });
         } catch (err) {
             console.error('Signup Error:', err); // Log errors
             res.status(500).json({ error: 'Registration failed' });
@@ -80,7 +86,11 @@ router.post(
             const token = jwt.sign({ id: patient._id }, secret, { expiresIn: '1h' });
             console.log('Login successful, Token:', token);
 
-            return res.status(200).json({ token });
+            return res.status(200).json({
+                token,
+                userId: patient.userId,
+                name: patient.name,
+            });
         } catch (err) {
             console.error('Signin Error:', err);
             res.status(500).json({ error: 'Internal Server Error' });
